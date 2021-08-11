@@ -37,3 +37,5 @@
 /Release
 /x64
 /.vs
+/CtrlTest/Debug
+/CtrlTest/x64
