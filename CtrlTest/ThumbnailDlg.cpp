@@ -11,32 +11,70 @@
 
 IMPLEMENT_DYNAMIC(CThumbnailDlg, CDialogEx)
 
-CThumbnailDlg::CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY)
+CThumbnailDlg::CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, bool bShowName, int rows, int cols)
 	: CDialogEx(IDD_DLG_THUMNAIL, pParent)
+	, kImageSizeX(thumSizeX)
+	, kImageSizeY(thumSizeY)
+	, kShowName(bShowName)
+	, kRows(rows)
+	, kCols(cols)
 {
-	m_thumSizeX = thumSizeX;
-	m_thumSizeY = thumSizeY;
 }
 
 CThumbnailDlg::~CThumbnailDlg()
 {
 }
 
-bool CThumbnailDlg::setImageDir(CString szDirPath)
+bool CThumbnailDlg::setImageDir(CString szDirPath, SIZE gap)
 {
+	// get image list
 	vector<CString> imageNameList;
-
 	if (!getImageFileNames(imageNameList, szDirPath)) {
 		return false;
 	}
 
-	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, 2, { 0, 0 }, false);
+	// set window size
+	{
+		// width
+		int wndW = kImageSizeX * kCols + gap.cx * (kCols + 1);
+
+		// height
+		int wndH;
+		if (kShowName) {
+			wndH = static_cast<int>((kImageSizeY + kLabelSizeY) * kRows + gap.cy * (kRows - 1));
+		}
+		else {
+			wndH = static_cast<int>(kImageSizeY * kRows + gap.cy * (kRows - 1));
+		}
+
+		// 
+		CRect rtClient;
+		m_listCtrlThumbnail.GetClientRect(&rtClient);
+		rtClient.SetRect(rtClient.left, rtClient.top, rtClient.left + wndW, rtClient.top + wndH);
+
+		m_listCtrlThumbnail.MoveWindow(&rtClient);
+	}
+
+	// scrollbar
+	{
+		// TODO
+		// - Row 갯수에 따라 정해야 함.
+		// - Scrollbar 감춰야 함.
+
+		// 스크롤 바 의 사용영역 설정.
+		m_scrollBarThumnail.SetScrollRange(0, 100);
+
+		// 스크롤 바의 위치 설정
+		m_scrollBarThumnail.SetScrollPos(50);
+	}
+	
+	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, gap);
 
 	return true;
 }
 
 void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNameList,
-	int nCols, SIZE gap, bool bShowName)
+	SIZE gap)
 {
 	// hold the window update to avoid flicking
 	m_listCtrlThumbnail.SetRedraw(FALSE);
@@ -62,15 +100,23 @@ void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNa
 		CString szPath;
 		szPath.Format(_T("%s\\%s"), szDirPath.GetBuffer(), imageName.GetBuffer());
 
-		// position
+		// position, name
 		POINT pos;
-		pos.x = (m_thumSizeX + gap.cx) * (i % nCols);
-		pos.y = (m_thumSizeY + gap.cy) * (int)(i / nCols);
+		CString szName;
+		pos.x = gap.cx + (kImageSizeX + gap.cx) * (i % kCols);
 
-		// name
-		CString szName = bShowName ? imageNameList[i] : _T("");
+		if (kShowName) {
+			pos.y = (kImageSizeY + gap.cy + kLabelSizeY) * (int)(i / kCols);
 
-		drawThumbnail(m_thumSizeX, m_thumSizeY, i, szPath, szName, pos);
+			szName = imageNameList[i];
+		}
+		else {
+			pos.y = (kImageSizeY + gap.cy) * (int)(i / kCols);
+
+			szName = _T("");
+		}
+
+		drawThumbnail(kImageSizeX, kImageSizeY, i, szPath, szName, pos);
 	}
 
 	// let's show the new thumbnails
@@ -89,7 +135,7 @@ void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int index,
 		// load the bitmap
 		USES_CONVERSION;
 		Gdiplus::Bitmap img(szImagePath);
-		Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(m_thumSizeX, m_thumSizeY, NULL, NULL));
+		Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(kImageSizeX, kImageSizeY, NULL, NULL));
 
 		// attach the thumbnail bitmap handle to an CBitmap object
 		HBITMAP hBmp;
@@ -217,24 +263,11 @@ BOOL CThumbnailDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_imageListThumb.Create(m_thumSizeX, m_thumSizeY, ILC_COLOR24, 0, 1);
+	m_imageListThumb.Create(kImageSizeX, kImageSizeY, ILC_COLOR24, 0, 1);
 	m_listCtrlThumbnail.SetImageList(&m_imageListThumb, LVSIL_NORMAL);
 
 	m_listCtrlThumbnail.ShowScrollBar(0, FALSE);
 	m_listCtrlThumbnail.ShowScrollBar(1, FALSE);
-
-	// scrollbar
-	{
-		// TODO
-		// - Row 갯수에 따라 정해야 함.
-		// - Scrollbar 감춰야 함.
-
-		// 스크롤 바 의 사용영역 설정.
-		m_scrollBarThumnail.SetScrollRange(0, 100);
-
-		// 스크롤 바의 위치 설정
-		m_scrollBarThumnail.SetScrollPos(50);
-	}
 
 	return TRUE;
 }
