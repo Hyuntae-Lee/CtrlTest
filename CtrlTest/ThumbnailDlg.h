@@ -20,7 +20,7 @@ public:
 protected:
 	bool getImageFileNames(vector<CString>& out_list, CString szDirPath);
 	void drawThumbnailList(CString szDirPath, vector<CString> imageNameList);
-	void drawThumbnail(int thumSizeX, int thumSizeY, int gapBetweenItems, int index, wstring strImagePath, wstring strName);
+	void drawThumbnail(int thumSizeX, int thumSizeY, int gapBetweenItems, int index, CString szImagePath, CString szName);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
@@ -34,8 +34,6 @@ protected:
 	int m_thumSizeX;
 	int m_thumSizeY;
 	int m_gapBetweenItems;
-
-	ULONG_PTR m_gdiplusToken = NULL;
 
 protected:
 	virtual BOOL OnInitDialog();

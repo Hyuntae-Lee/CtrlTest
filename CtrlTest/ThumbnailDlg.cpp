@@ -32,6 +32,8 @@ bool CThumbnailDlg::setImageDir(CString szDirPath)
 	}
 
 	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList);
+
+	return true;
 }
 
 bool CThumbnailDlg::getImageFileNames(vector<CString>& out_list, CString szDirPath)
@@ -120,17 +122,11 @@ bool CThumbnailDlg::getImageFileNames(vector<CString>& out_list, CString szDirPa
 
 void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNameList)
 {
-	CBitmap* pImage = NULL;
-	HBITMAP		hBmp = NULL;
-	POINT		pt;
-	CString		strPath;
-	int			i;
-
 	// hold the window update to avoid flicking
 	m_listCtrlThumbnail.SetRedraw(FALSE);
 
 	// reset our image list
-	for (i = 0; i < m_imageListThumb.GetImageCount(); i++) {
+	for (int i = 0; i < m_imageListThumb.GetImageCount(); i++) {
 		m_imageListThumb.Remove(i);
 	}
 
@@ -140,53 +136,16 @@ void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNa
 	}
 
 	// set the size of the image list
-	m_imageListThumb.SetImageCount(imageNameList.size());
-	i = 0;
+	m_imageListThumb.SetImageCount(static_cast<UINT>(imageNameList.size()));
 
 	// draw the thumbnails
-	for (auto imageName : imageNameList) {
+	for (int i = 0; i < imageNameList.size(); i++) {
+		auto imageName = imageNameList[i];
 
-		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-		Gdiplus::GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, nullptr);
+		CString szPath;
+		szPath.Format(_T("%s\\%s"), szDirPath.GetBuffer(), imageName.GetBuffer());
 
-		{
-			// load the bitmap
-			strPath.Format(_T("%s\\%s"), szDirPath, imageName);
-
-
-			//	drawThumbnail(m_thumSizeX, m_thumSizeY, m_gapBetweenItems, i,
-			//wstring strImagePath, imageNameList[i]);
-
-
-			USES_CONVERSION;
-			Gdiplus::Bitmap img(strPath);
-			Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(m_thumSizeX, m_thumSizeY, NULL, NULL));
-
-			// attach the thumbnail bitmap handle to an CBitmap object
-			pThumbnail->GetHBITMAP(NULL, &hBmp);
-			pImage = new CBitmap();
-			pImage->Attach(hBmp);
-
-			// add bitmap to our image list
-			m_imageListThumb.Replace(i, pImage, NULL);
-
-			// put item to display
-			// set the image file name as item text
-			m_listCtrlThumbnail.InsertItem(i, imageNameList[i], i);
-
-			// get current item position	 
-			m_listCtrlThumbnail.GetItemPosition(i, &pt);
-
-			// shift the thumbnail to desired position
-			pt.x = m_gapBetweenItems + i * (m_thumSizeX + m_gapBetweenItems);
-			m_listCtrlThumbnail.SetItemPosition(i, pt);
-			i++;
-
-			delete pImage;
-			delete pThumbnail;
-		}
-
-		Gdiplus::GdiplusShutdown(m_gdiplusToken);
+		drawThumbnail(m_thumSizeX, m_thumSizeY, m_gapBetweenItems, i, szPath, imageNameList[i]);
 	}
 
 	// let's show the new thumbnails
@@ -194,15 +153,17 @@ void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNa
 }
 
 void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int gapBetweenItems, int index,
-	wstring strImagePath, wstring strName)
+	CString szImagePath, CString szName)
 {
+	ULONG_PTR gdiplusToken = NULL;
+
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-	Gdiplus::GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, nullptr);
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 
 	{
 		// load the bitmap
 		USES_CONVERSION;
-		Gdiplus::Bitmap img(strImagePath.c_str());
+		Gdiplus::Bitmap img(szImagePath);
 		Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(m_thumSizeX, m_thumSizeY, NULL, NULL));
 
 		// attach the thumbnail bitmap handle to an CBitmap object
@@ -216,7 +177,7 @@ void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int gapBetweenIt
 
 		// put item to display
 		// set the image file name as item text
-		m_listCtrlThumbnail.InsertItem(index, strName.c_str(), index);
+		m_listCtrlThumbnail.InsertItem(index, szName, index);
 
 		// get current item position
 		POINT pt;
@@ -230,7 +191,7 @@ void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int gapBetweenIt
 		delete pThumbnail;
 	}
 
-	Gdiplus::GdiplusShutdown(m_gdiplusToken);
+	Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
 void CThumbnailDlg::DoDataExchange(CDataExchange* pDX)
