@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include "ImageListViewer.h"
 
 using namespace std;
 
@@ -31,7 +32,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 protected:
-	CListCtrl m_listCtrlThumbnail;
+	CImageListViewer m_listCtrlThumbnail;
 	CImageList m_imageListThumb;		// image list holding the thumbnails
 
 	int m_thumSizeX;

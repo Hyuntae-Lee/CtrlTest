@@ -30,7 +30,7 @@ bool CThumbnailDlg::setImageDir(CString szDirPath)
 		return false;
 	}
 
-	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, 2, { 10, 10 }, false);
+	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, 2, { 0, 0 }, false);
 
 	return true;
 }
@@ -218,6 +218,5 @@ BOOL CThumbnailDlg::OnInitDialog()
 	m_imageListThumb.Create(m_thumSizeX, m_thumSizeY, ILC_COLOR24, 0, 1);
 	m_listCtrlThumbnail.SetImageList(&m_imageListThumb, LVSIL_NORMAL);
 
-	return TRUE;  // return TRUE unless you set the focus to a control
-				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
+	return TRUE;
 }
