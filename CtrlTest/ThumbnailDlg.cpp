@@ -11,13 +11,14 @@
 
 IMPLEMENT_DYNAMIC(CThumbnailDlg, CDialogEx)
 
-CThumbnailDlg::CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, bool bShowName, int rows, int cols)
+CThumbnailDlg::CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, bool bShowName, int rows, int cols, SIZE gap)
 	: CDialogEx(IDD_DLG_THUMNAIL, pParent)
 	, kImageSizeX(thumSizeX)
 	, kImageSizeY(thumSizeY)
 	, kShowName(bShowName)
 	, kRows(rows)
 	, kCols(cols)
+	, kGap(gap)
 {
 }
 
@@ -25,7 +26,7 @@ CThumbnailDlg::~CThumbnailDlg()
 {
 }
 
-bool CThumbnailDlg::setImageDir(CString szDirPath, SIZE gap)
+bool CThumbnailDlg::loadImages(CString szDirPath)
 {
 	// get image list
 	vector<CString> imageNameList;
@@ -33,42 +34,15 @@ bool CThumbnailDlg::setImageDir(CString szDirPath, SIZE gap)
 		return false;
 	}
 
-	// set window size
-	{
-		// width
-		int wndW = kImageSizeX * kCols + gap.cx * (kCols + 1);
-
-		// height
-		int wndH;
-		if (kShowName) {
-			wndH = static_cast<int>((kImageSizeY + kLabelSizeY) * kRows + gap.cy * (kRows - 1));
-		}
-		else {
-			wndH = static_cast<int>(kImageSizeY * kRows + gap.cy * (kRows - 1));
-		}
-
-		// 
-		CRect rtClient;
-		m_listCtrlThumbnail.GetClientRect(&rtClient);
-		rtClient.SetRect(rtClient.left, rtClient.top, rtClient.left + wndW, rtClient.top + wndH);
-
-		m_listCtrlThumbnail.MoveWindow(&rtClient);
-	}
-
 	// scrollbar
 	{
-		// TODO
-		// - Row 갯수에 따라 정해야 함.
-		// - Scrollbar 감춰야 함.
+		auto nRealRows = (int)(imageNameList.size() / kCols);
 
-		// 스크롤 바 의 사용영역 설정.
-		m_scrollBarThumnail.SetScrollRange(0, 100);
-
-		// 스크롤 바의 위치 설정
-		m_scrollBarThumnail.SetScrollPos(50);
+		m_scrollBarThumnail.SetScrollRange(0, (nRealRows - kRows) * kImageSizeY);
+		m_scrollBarThumnail.SetScrollPos(0);
 	}
 	
-	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, gap);
+	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, kGap);
 
 	return true;
 }
@@ -269,6 +243,33 @@ BOOL CThumbnailDlg::OnInitDialog()
 	m_listCtrlThumbnail.ShowScrollBar(0, FALSE);
 	m_listCtrlThumbnail.ShowScrollBar(1, FALSE);
 
+	// set window size
+	{
+		// width
+		int wndW = kImageSizeX * kCols + kGap.cx * (kCols + 1);
+
+		// height
+		int wndH;
+		if (kShowName) {
+			wndH = static_cast<int>((kImageSizeY + kLabelSizeY) * kRows + kGap.cy * (kRows - 1));
+		}
+		else {
+			wndH = static_cast<int>(kImageSizeY * kRows + kGap.cy * (kRows - 1));
+		}
+
+		// 
+		CRect rtClient;
+		m_listCtrlThumbnail.GetClientRect(&rtClient);
+		rtClient.SetRect(rtClient.left, rtClient.top, rtClient.left + wndW, rtClient.top + wndH);
+
+		m_listCtrlThumbnail.MoveWindow(&rtClient);
+
+		CRect rtScrollbar;
+		rtScrollbar.SetRect(rtClient.right, rtClient.top, rtClient.right + 20, rtClient.bottom);
+
+		m_scrollBarThumnail.MoveWindow(rtScrollbar);
+	}
+
 	return TRUE;
 }
 
@@ -277,8 +278,46 @@ void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
 	if (pScrollBar == &m_scrollBarThumnail) {
 		if (nPos == 0) {
-			// TODO - 스크롤 상태에 따라 listCtrl 에 보여주는 항목을 다리게 처리해야 한다.
-			m_listCtrlThumbnail.Scroll(CSize(0, 75));
+
+			// TODO : https://jhb.kr/202 참고
+
+			//m_listCtrlThumbnail.Scroll(CSize(0, kImageSizeY));
+
+
+
+			SCROLLINFO  scrinfo;
+			// 스크롤바 정보를 가져온다.
+			if (pScrollBar->GetScrollInfo(&scrinfo))
+			{
+				switch (nSBCode)
+				{
+				case SB_PAGEUP:   // 스크롤 바의 위쪽 바를 클릭
+					scrinfo.nPos -= scrinfo.nPage;
+					break;
+				case SB_PAGEDOWN:  // 스크롤 바의 아래쪽 바를 클릭
+					scrinfo.nPos += scrinfo.nPage;
+					break;
+				case SB_LINEUP:   // 스크롤 바의 위쪽 화살표를 클릭
+					scrinfo.nPos -= scrinfo.nPage / 10;
+					break;
+				case SB_LINEDOWN:  // 스크롤 바의 아래쪽 화살표를 클릭
+					scrinfo.nPos += scrinfo.nPage / 10;
+					break;
+				case SB_THUMBPOSITION: // 스크롤바의 트랙이 움직이고 나서
+				case SB_THUMBTRACK:  // 스크롤바의 트랙이 움직이는 동안
+					scrinfo.nPos = scrinfo.nTrackPos;   // 16bit값 이상을 사용
+					break;
+				}
+
+				{
+					CString szLog;
+					szLog.Format(_T("######## scroll position is %d"), scrinfo.nPos);
+					OutputDebugString(szLog);
+				}
+
+				// 스크롤바의 위치를 변경한다.
+				pScrollBar->SetScrollPos(scrinfo.nPos);
+			}
 		}
 	}
 

@@ -56,7 +56,7 @@ CCtrlTestDlg::CCtrlTestDlg(CWnd* pParent /*=nullptr*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	pThumnailDlg = new CThumbnailDlg(this, 60, 60, true, 2, 2);
+	pThumnailDlg = new CThumbnailDlg(this, 60, 60, true, 2, 2, { 10, 10 });
 	pThumnailDlg->Create(CThumbnailDlg::IDD);
 }
 
@@ -156,10 +156,8 @@ HCURSOR CCtrlTestDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-
 void CCtrlTestDlg::OnBnClickedOk()
 {
-	pThumnailDlg->setImageDir(_T("..\\imageSamples"), {10, 10});
+	pThumnailDlg->loadImages(_T("..\\imageSamples"));
 	pThumnailDlg->ShowWindow(SW_SHOW);
 }

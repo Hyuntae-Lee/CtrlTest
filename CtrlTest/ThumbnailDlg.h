@@ -16,12 +16,13 @@ class CThumbnailDlg : public CDialogEx
 	const int kCols;
 	const int kRows;
 	const bool kShowName;
+	const SIZE kGap;
 
 public:
-	CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, bool bShowName, int rows, int cols);
+	CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, bool bShowName, int rows, int cols, SIZE gap);
 	virtual ~CThumbnailDlg();
 
-	bool setImageDir(CString dzDirPath, SIZE gap);
+	bool loadImages(CString dzDirPath);
 
 	enum { IDD = IDD_DLG_THUMNAIL };
 
