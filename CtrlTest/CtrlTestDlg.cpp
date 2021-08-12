@@ -56,7 +56,7 @@ CCtrlTestDlg::CCtrlTestDlg(CWnd* pParent /*=nullptr*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	pThumnailDlg = new CThumbnailDlg(this, 100, 75, 6);
+	pThumnailDlg = new CThumbnailDlg(this, 100, 75);
 	pThumnailDlg->Create(CThumbnailDlg::IDD);
 }
 

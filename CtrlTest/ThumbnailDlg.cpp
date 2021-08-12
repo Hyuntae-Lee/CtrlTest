@@ -11,12 +11,11 @@
 
 IMPLEMENT_DYNAMIC(CThumbnailDlg, CDialogEx)
 
-CThumbnailDlg::CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, int gapBetweenItems)
+CThumbnailDlg::CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY)
 	: CDialogEx(IDD_DLG_THUMNAIL, pParent)
 {
 	m_thumSizeX = thumSizeX;
 	m_thumSizeY = thumSizeY;
-	m_gapBetweenItems = gapBetweenItems;
 }
 
 CThumbnailDlg::~CThumbnailDlg()
@@ -31,9 +30,88 @@ bool CThumbnailDlg::setImageDir(CString szDirPath)
 		return false;
 	}
 
-	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList);
+	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, 2, { 10, 10 }, false);
 
 	return true;
+}
+
+void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNameList,
+	int nCols, SIZE gap, bool bShowName)
+{
+	// hold the window update to avoid flicking
+	m_listCtrlThumbnail.SetRedraw(FALSE);
+
+	// reset our image list
+	for (int i = 0; i < m_imageListThumb.GetImageCount(); i++) {
+		m_imageListThumb.Remove(i);
+	}
+
+	// remove all items from list view
+	if (m_listCtrlThumbnail.GetItemCount() != 0) {
+		m_listCtrlThumbnail.DeleteAllItems();
+	}
+
+	// set the size of the image list
+	m_imageListThumb.SetImageCount(static_cast<UINT>(imageNameList.size()));
+
+	// draw the thumbnails
+	for (int i = 0; i < imageNameList.size(); i++) {
+		auto imageName = imageNameList[i];
+
+		// image path
+		CString szPath;
+		szPath.Format(_T("%s\\%s"), szDirPath.GetBuffer(), imageName.GetBuffer());
+
+		// position
+		POINT pos;
+		pos.x = (m_thumSizeX + gap.cx) * (i % nCols);
+		pos.y = (m_thumSizeY + gap.cy) * (int)(i / nCols);
+
+		// name
+		CString szName = bShowName ? imageNameList[i] : _T("");
+
+		drawThumbnail(m_thumSizeX, m_thumSizeY, i, szPath, szName, pos);
+	}
+
+	// let's show the new thumbnails
+	m_listCtrlThumbnail.SetRedraw();
+}
+
+void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int index,
+	CString szImagePath, CString szName, POINT pos)
+{
+	ULONG_PTR gdiplusToken = NULL;
+
+	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+
+	{
+		// load the bitmap
+		USES_CONVERSION;
+		Gdiplus::Bitmap img(szImagePath);
+		Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(m_thumSizeX, m_thumSizeY, NULL, NULL));
+
+		// attach the thumbnail bitmap handle to an CBitmap object
+		HBITMAP hBmp;
+		pThumbnail->GetHBITMAP(NULL, &hBmp);
+		auto pImage = new CBitmap();
+		pImage->Attach(hBmp);
+
+		// add bitmap to our image list
+		m_imageListThumb.Replace(index, pImage, NULL);
+
+		// put item to display
+		// set the image file name as item text
+		m_listCtrlThumbnail.InsertItem(index, szName, index);
+
+		// set position
+		m_listCtrlThumbnail.SetItemPosition(index, pos);
+
+		delete pImage;
+		delete pThumbnail;
+	}
+
+	Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
 bool CThumbnailDlg::getImageFileNames(vector<CString>& out_list, CString szDirPath)
@@ -118,80 +196,6 @@ bool CThumbnailDlg::getImageFileNames(vector<CString>& out_list, CString szDirPa
 
 	//
 	return true;
-}
-
-void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNameList)
-{
-	// hold the window update to avoid flicking
-	m_listCtrlThumbnail.SetRedraw(FALSE);
-
-	// reset our image list
-	for (int i = 0; i < m_imageListThumb.GetImageCount(); i++) {
-		m_imageListThumb.Remove(i);
-	}
-
-	// remove all items from list view
-	if (m_listCtrlThumbnail.GetItemCount() != 0) {
-		m_listCtrlThumbnail.DeleteAllItems();
-	}
-
-	// set the size of the image list
-	m_imageListThumb.SetImageCount(static_cast<UINT>(imageNameList.size()));
-
-	// draw the thumbnails
-	for (int i = 0; i < imageNameList.size(); i++) {
-		auto imageName = imageNameList[i];
-
-		CString szPath;
-		szPath.Format(_T("%s\\%s"), szDirPath.GetBuffer(), imageName.GetBuffer());
-
-		drawThumbnail(m_thumSizeX, m_thumSizeY, m_gapBetweenItems, i, szPath, imageNameList[i]);
-	}
-
-	// let's show the new thumbnails
-	m_listCtrlThumbnail.SetRedraw();
-}
-
-void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int gapBetweenItems, int index,
-	CString szImagePath, CString szName)
-{
-	ULONG_PTR gdiplusToken = NULL;
-
-	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
-
-	{
-		// load the bitmap
-		USES_CONVERSION;
-		Gdiplus::Bitmap img(szImagePath);
-		Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(m_thumSizeX, m_thumSizeY, NULL, NULL));
-
-		// attach the thumbnail bitmap handle to an CBitmap object
-		HBITMAP hBmp;
-		pThumbnail->GetHBITMAP(NULL, &hBmp);
-		auto pImage = new CBitmap();
-		pImage->Attach(hBmp);
-
-		// add bitmap to our image list
-		m_imageListThumb.Replace(index, pImage, NULL);
-
-		// put item to display
-		// set the image file name as item text
-		m_listCtrlThumbnail.InsertItem(index, szName, index);
-
-		// get current item position
-		POINT pt;
-		m_listCtrlThumbnail.GetItemPosition(index, &pt);
-
-		// shift the thumbnail to desired position
-		pt.x = m_gapBetweenItems + index * (m_thumSizeX + m_gapBetweenItems);
-		m_listCtrlThumbnail.SetItemPosition(index, pt);
-
-		delete pImage;
-		delete pThumbnail;
-	}
-
-	Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
 void CThumbnailDlg::DoDataExchange(CDataExchange* pDX)

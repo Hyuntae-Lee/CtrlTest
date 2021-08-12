@@ -10,7 +10,7 @@ class CThumbnailDlg : public CDialogEx
 	DECLARE_DYNAMIC(CThumbnailDlg)
 
 public:
-	CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, int gapBetweenItems);
+	CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY);
 	virtual ~CThumbnailDlg();
 
 	bool setImageDir(CString dzDirPath);
@@ -18,9 +18,12 @@ public:
 	enum { IDD = IDD_DLG_THUMNAIL };
 
 protected:
+	void drawThumbnailList(CString szDirPath, vector<CString> imageNameList, int nCols, SIZE gap,
+		bool bShowName);
+	void drawThumbnail(int thumSizeX, int thumSizeY, int index, CString szImagePath, CString szName,
+		POINT pos);
+
 	bool getImageFileNames(vector<CString>& out_list, CString szDirPath);
-	void drawThumbnailList(CString szDirPath, vector<CString> imageNameList);
-	void drawThumbnail(int thumSizeX, int thumSizeY, int gapBetweenItems, int index, CString szImagePath, CString szName);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
@@ -33,7 +36,6 @@ protected:
 
 	int m_thumSizeX;
 	int m_thumSizeY;
-	int m_gapBetweenItems;
 
 protected:
 	virtual BOOL OnInitDialog();
