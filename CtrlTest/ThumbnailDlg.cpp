@@ -203,9 +203,11 @@ void CThumbnailDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 
 	DDX_Control(pDX, IDC_LIST_THUMNAILS, m_listCtrlThumbnail);
+	DDX_Control(pDX, IDC_SCROLLBAR_THUMNAIL, m_scrollBarThumnail);
 }
 
 BEGIN_MESSAGE_MAP(CThumbnailDlg, CDialogEx)
+	ON_WM_VSCROLL()
 END_MESSAGE_MAP()
 
 
@@ -218,5 +220,34 @@ BOOL CThumbnailDlg::OnInitDialog()
 	m_imageListThumb.Create(m_thumSizeX, m_thumSizeY, ILC_COLOR24, 0, 1);
 	m_listCtrlThumbnail.SetImageList(&m_imageListThumb, LVSIL_NORMAL);
 
+	m_listCtrlThumbnail.ShowScrollBar(0, FALSE);
+	m_listCtrlThumbnail.ShowScrollBar(1, FALSE);
+
+	// scrollbar
+	{
+		// TODO
+		// - Row 갯수에 따라 정해야 함.
+		// - Scrollbar 감춰야 함.
+
+		// 스크롤 바 의 사용영역 설정.
+		m_scrollBarThumnail.SetScrollRange(0, 100);
+
+		// 스크롤 바의 위치 설정
+		m_scrollBarThumnail.SetScrollPos(50);
+	}
+
 	return TRUE;
+}
+
+
+void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	if (pScrollBar == &m_scrollBarThumnail) {
+		if (nPos == 0) {
+			// TODO - 스크롤 상태에 따라 listCtrl 에 보여주는 항목을 다리게 처리해야 한다.
+			m_listCtrlThumbnail.Scroll(CSize(0, 75));
+		}
+	}
+
+	CDialogEx::OnVScroll(nSBCode, nPos, pScrollBar);
 }

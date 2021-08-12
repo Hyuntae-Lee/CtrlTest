@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include "ImageListViewer.h"
 
 using namespace std;
 
@@ -32,7 +31,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 protected:
-	CImageListViewer m_listCtrlThumbnail;
+	CListCtrl m_listCtrlThumbnail;
+	CScrollBar m_scrollBarThumnail;
 	CImageList m_imageListThumb;		// image list holding the thumbnails
 
 	int m_thumSizeX;
@@ -40,4 +40,7 @@ protected:
 
 protected:
 	virtual BOOL OnInitDialog();
+
+public:
+	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 };

@@ -39,9 +39,6 @@
     <ClInclude Include="ThumbnailDlg.h">
       <Filter>ThumnailDialog</Filter>
     </ClInclude>
-    <ClInclude Include="ImageListViewer.h">
-      <Filter>ThumnailDialog</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CtrlTest.cpp">
@@ -54,9 +51,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ThumbnailDlg.cpp">
-      <Filter>ThumnailDialog</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageListViewer.cpp">
       <Filter>ThumnailDialog</Filter>
     </ClCompile>
   </ItemGroup>
