@@ -7,7 +7,7 @@
 #include "CtrlTest.h"
 #include "CtrlTestDlg.h"
 #include "afxdialogex.h"
-#include "ThumbnailDlg.h"
+#include "DlgThumbnailList.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -56,8 +56,8 @@ CCtrlTestDlg::CCtrlTestDlg(CWnd* pParent /*=nullptr*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	pThumnailDlg = new CThumbnailDlg(this, 60, 60, true, 2, 2, { 10, 10 });
-	pThumnailDlg->Create(CThumbnailDlg::IDD);
+	pThumnailDlg = new CDlgThumbnailList(this, 100, 100, false, 2, 3, { 0, 0 });
+	pThumnailDlg->Create(CDlgThumbnailList::IDD);
 }
 
 void CCtrlTestDlg::DoDataExchange(CDataExchange* pDX)
@@ -158,6 +158,6 @@ HCURSOR CCtrlTestDlg::OnQueryDragIcon()
 
 void CCtrlTestDlg::OnBnClickedOk()
 {
-	pThumnailDlg->loadImages(_T("..\\imageSamples"));
+	pThumnailDlg->loadImages(_T("D:\\Projects\\Smart M 2.0\\work\\ScoutImageSample"));
 	pThumnailDlg->ShowWindow(SW_SHOW);
 }

@@ -189,7 +189,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="ThumbnailDlg.h" />
+    <ClInclude Include="DlgThumbnailList.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CtrlTest.cpp" />
@@ -200,7 +200,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ThumbnailDlg.cpp" />
+    <ClCompile Include="DlgThumbnailList.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CtrlTest.rc" />

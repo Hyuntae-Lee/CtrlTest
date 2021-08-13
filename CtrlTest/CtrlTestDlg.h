@@ -6,7 +6,7 @@
 
 
 // CCtrlTestDlg 대화 상자
-class CThumbnailDlg;
+class CDlgThumbnailList;
 class CCtrlTestDlg : public CDialogEx
 {
 // 생성입니다.
@@ -34,7 +34,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 protected:
-	CThumbnailDlg* pThumnailDlg;
+	CDlgThumbnailList* pThumnailDlg;
 public:
 	afx_msg void OnBnClickedOk();
 };

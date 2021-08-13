@@ -3,30 +3,31 @@
 
 #include "pch.h"
 #include "CtrlTest.h"
-#include "ThumbnailDlg.h"
+#include "DlgThumbnailList.h"
 #include "afxdialogex.h"
 #include <gdiplus.h>
 
 // CThumbnailDlg 대화 상자
 
-IMPLEMENT_DYNAMIC(CThumbnailDlg, CDialogEx)
+IMPLEMENT_DYNAMIC(CDlgThumbnailList, CDialogEx)
 
-CThumbnailDlg::CThumbnailDlg(CWnd* pParent, int thumSizeX, int thumSizeY, bool bShowName, int rows, int cols, SIZE gap)
+CDlgThumbnailList::CDlgThumbnailList(CWnd* pParent, int thumSizeX, int thumSizeY, bool bShowName, int rows,
+	int cols, SIZE marginForItems)
 	: CDialogEx(IDD_DLG_THUMNAIL, pParent)
 	, kImageSizeX(thumSizeX)
 	, kImageSizeY(thumSizeY)
 	, kShowName(bShowName)
 	, kRows(rows)
 	, kCols(cols)
-	, kGap(gap)
+	, kMarginForItems(marginForItems)
 {
 }
 
-CThumbnailDlg::~CThumbnailDlg()
+CDlgThumbnailList::~CDlgThumbnailList()
 {
 }
 
-bool CThumbnailDlg::loadImages(CString szDirPath)
+bool CDlgThumbnailList::loadImages(CString szDirPath)
 {
 	// get image list
 	vector<CString> imageNameList;
@@ -34,21 +35,12 @@ bool CThumbnailDlg::loadImages(CString szDirPath)
 		return false;
 	}
 
-	// scrollbar
-	{
-		auto nRealRows = (int)(imageNameList.size() / kCols);
-
-		m_scrollBarThumnail.SetScrollRange(0, (nRealRows - kRows) * kImageSizeY);
-		m_scrollBarThumnail.SetScrollPos(0);
-	}
-	
-	CThumbnailDlg::drawThumbnailList(szDirPath, imageNameList, kGap);
+	drawThumbnailList(szDirPath, imageNameList);
 
 	return true;
 }
 
-void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNameList,
-	SIZE gap)
+void CDlgThumbnailList::drawThumbnailList(CString szDirPath, vector<CString> imageNameList)
 {
 	// hold the window update to avoid flicking
 	m_listCtrlThumbnail.SetRedraw(FALSE);
@@ -77,15 +69,15 @@ void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNa
 		// position, name
 		POINT pos;
 		CString szName;
-		pos.x = gap.cx + (kImageSizeX + gap.cx) * (i % kCols);
+		pos.x = (kImageSizeX + kMarginForItems.cx) * (i % kCols);
 
 		if (kShowName) {
-			pos.y = (kImageSizeY + gap.cy + kLabelSizeY) * (int)(i / kCols);
+			pos.y = (kImageSizeY + kMarginForItems.cy + kLabelSizeY) * (int)(i / kCols);
 
 			szName = imageNameList[i];
 		}
 		else {
-			pos.y = (kImageSizeY + gap.cy) * (int)(i / kCols);
+			pos.y = (kImageSizeY + kMarginForItems.cy) * (int)(i / kCols);
 
 			szName = _T("");
 		}
@@ -97,7 +89,7 @@ void CThumbnailDlg::drawThumbnailList(CString szDirPath, vector<CString> imageNa
 	m_listCtrlThumbnail.SetRedraw();
 }
 
-void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int index,
+void CDlgThumbnailList::drawThumbnail(int thumSizeX, int thumSizeY, int index,
 	CString szImagePath, CString szName, POINT pos)
 {
 	ULONG_PTR gdiplusToken = NULL;
@@ -134,7 +126,7 @@ void CThumbnailDlg::drawThumbnail(int thumSizeX, int thumSizeY, int index,
 	Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
-bool CThumbnailDlg::getImageFileNames(vector<CString>& out_list, CString szDirPath)
+bool CDlgThumbnailList::getImageFileNames(vector<CString>& out_list, CString szDirPath)
 {
 	CString	strExt;
 	CString	strName;
@@ -218,22 +210,21 @@ bool CThumbnailDlg::getImageFileNames(vector<CString>& out_list, CString szDirPa
 	return true;
 }
 
-void CThumbnailDlg::DoDataExchange(CDataExchange* pDX)
+void CDlgThumbnailList::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 
 	DDX_Control(pDX, IDC_LIST_THUMNAILS, m_listCtrlThumbnail);
-	DDX_Control(pDX, IDC_SCROLLBAR_THUMNAIL, m_scrollBarThumnail);
 }
 
-BEGIN_MESSAGE_MAP(CThumbnailDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CDlgThumbnailList, CDialogEx)
 	ON_WM_VSCROLL()
 END_MESSAGE_MAP()
 
 
 // CThumbnailDlg 메시지 처리기
 
-BOOL CThumbnailDlg::OnInitDialog()
+BOOL CDlgThumbnailList::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
@@ -246,15 +237,16 @@ BOOL CThumbnailDlg::OnInitDialog()
 	// set window size
 	{
 		// width
-		int wndW = kImageSizeX * kCols + kGap.cx * (kCols + 1);
+		int wndW = kImageSizeX * kCols + kMarginForItems.cx * (kCols - 1) +
+			(kShowName ? kScrollMargin : kScrollMarginForNoName);
 
 		// height
 		int wndH;
 		if (kShowName) {
-			wndH = static_cast<int>((kImageSizeY + kLabelSizeY) * kRows + kGap.cy * (kRows - 1));
+			wndH = static_cast<int>((kImageSizeY + kLabelSizeY) * kRows + kMarginForItems.cy * (kRows - 1));
 		}
 		else {
-			wndH = static_cast<int>(kImageSizeY * kRows + kGap.cy * (kRows - 1));
+			wndH = static_cast<int>(kImageSizeY * kRows + kMarginForItems.cy * (kRows - 1));
 		}
 
 		// 
@@ -263,63 +255,7 @@ BOOL CThumbnailDlg::OnInitDialog()
 		rtClient.SetRect(rtClient.left, rtClient.top, rtClient.left + wndW, rtClient.top + wndH);
 
 		m_listCtrlThumbnail.MoveWindow(&rtClient);
-
-		CRect rtScrollbar;
-		rtScrollbar.SetRect(rtClient.right, rtClient.top, rtClient.right + 20, rtClient.bottom);
-
-		m_scrollBarThumnail.MoveWindow(rtScrollbar);
 	}
 
 	return TRUE;
-}
-
-
-void CThumbnailDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
-{
-	if (pScrollBar == &m_scrollBarThumnail) {
-		if (nPos == 0) {
-
-			// TODO : https://jhb.kr/202 참고
-
-			//m_listCtrlThumbnail.Scroll(CSize(0, kImageSizeY));
-
-
-
-			SCROLLINFO  scrinfo;
-			// 스크롤바 정보를 가져온다.
-			if (pScrollBar->GetScrollInfo(&scrinfo))
-			{
-				switch (nSBCode)
-				{
-				case SB_PAGEUP:   // 스크롤 바의 위쪽 바를 클릭
-					scrinfo.nPos -= scrinfo.nPage;
-					break;
-				case SB_PAGEDOWN:  // 스크롤 바의 아래쪽 바를 클릭
-					scrinfo.nPos += scrinfo.nPage;
-					break;
-				case SB_LINEUP:   // 스크롤 바의 위쪽 화살표를 클릭
-					scrinfo.nPos -= scrinfo.nPage / 10;
-					break;
-				case SB_LINEDOWN:  // 스크롤 바의 아래쪽 화살표를 클릭
-					scrinfo.nPos += scrinfo.nPage / 10;
-					break;
-				case SB_THUMBPOSITION: // 스크롤바의 트랙이 움직이고 나서
-				case SB_THUMBTRACK:  // 스크롤바의 트랙이 움직이는 동안
-					scrinfo.nPos = scrinfo.nTrackPos;   // 16bit값 이상을 사용
-					break;
-				}
-
-				{
-					CString szLog;
-					szLog.Format(_T("######## scroll position is %d"), scrinfo.nPos);
-					OutputDebugString(szLog);
-				}
-
-				// 스크롤바의 위치를 변경한다.
-				pScrollBar->SetScrollPos(scrinfo.nPos);
-			}
-		}
-	}
-
-	CDialogEx::OnVScroll(nSBCode, nPos, pScrollBar);
 }
