@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include "cpprest/json.h"
 
 using namespace std;
 
@@ -21,7 +22,7 @@ public:
 	CDlgTomographyViewer(CWnd* pParent, SIZE thumbImageSize, int rows, int cols);
 	virtual ~CDlgTomographyViewer();
 
-	bool loadImages(CString dzDirPath);
+	bool loadImages(CString szDirPath, CString szInfoFileName);
 
 	enum { IDD = IDD_DLG_TOMOGRAPHYVIEWER };
 
@@ -33,6 +34,7 @@ protected:
 	void drawThumbnail(int thumSizeX, int thumSizeY, int index, CString szImagePath, CString szName,
 		POINT pos);
 	bool getImageFileNames(vector<CString>& out_list, CString szDirPath);
+	bool loadJsonFile(web::json::value& out_value, wstring strPath);
 
 	DECLARE_MESSAGE_MAP()
 

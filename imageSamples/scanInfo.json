@@ -1,0 +1,7 @@
+{
+    "cscan_0" : "cscan_0.png",
+    "cscan_1" : "cscan_1.png",
+    "bscan_cnt" : 20,
+    "bscan_file_prefix" : "bscan",
+    "bscna_file_ext" : "png"
+}

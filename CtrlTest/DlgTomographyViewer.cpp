@@ -5,7 +5,7 @@
 #include "CtrlTest.h"
 #include "DlgTomographyViewer.h"
 #include "afxdialogex.h"
-
+#include <fstream>
 
 // CDlgTomographyViewer 대화 상자
 
@@ -25,8 +25,23 @@ CDlgTomographyViewer::~CDlgTomographyViewer()
 {
 }
 
-bool CDlgTomographyViewer::loadImages(CString szDirPath)
+bool CDlgTomographyViewer::loadImages(CString szDirPath, CString szInfoFileName)
 {
+	wstring strDirPath = CT2CW(szDirPath);
+
+	// load json file
+	web::json::value jsonValue;
+
+	wstring strFileName = CT2CW(szInfoFileName);
+	auto strFilePath = strDirPath + L"/" + strFileName;
+
+	if (!loadJsonFile(jsonValue, strFilePath)) {
+		return false;
+	}
+	
+
+	// TODO
+
 	// get image list
 	imageNameListBScans.clear();
 	if (!getImageFileNames(imageNameListBScans, szDirPath)) {
@@ -211,6 +226,30 @@ bool CDlgTomographyViewer::getImageFileNames(vector<CString>& out_list, CString 
 BEGIN_MESSAGE_MAP(CDlgTomographyViewer, CDialogEx)
 END_MESSAGE_MAP()
 
+bool CDlgTomographyViewer::loadJsonFile(web::json::value& out_value, wstring strPath)
+{
+	// read file
+	wifstream file(strPath);
+	if (!file.is_open()) {
+		return false;
+	}
+
+	wstringbuf strContentsBuf;
+	wostream os(&strContentsBuf);
+
+	while (file) {
+		wstring strLine;
+		getline(file, strLine);
+
+		os << strLine;
+	}
+	file.close();
+
+	// load json conents
+	out_value = web::json::value::parse(strContentsBuf.str());
+
+	return true;
+}
 
 // CDlgTomographyViewer 메시지 처리기
 BOOL CDlgTomographyViewer::OnInitDialog()

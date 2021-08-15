@@ -181,6 +181,6 @@ void CCtrlTestDlg::OnBnClickedButton1()
 
 void CCtrlTestDlg::OnBnClickedButton2()
 {
-	pTomographyViewer->loadImages(_T("G:\\Projects\\CtrlTest\\imageSamples"));
+	pTomographyViewer->loadImages(_T("G:\\Projects\\CtrlTest\\imageSamples"), _T("scanInfo.json"));
 	pTomographyViewer->ShowWindow(SW_SHOW);
 }
