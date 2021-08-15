@@ -8,6 +8,7 @@
 #include "CtrlTestDlg.h"
 #include "afxdialogex.h"
 #include "DlgThumbnailList.h"
+#include "DlgTomographyViewer.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -58,6 +59,15 @@ CCtrlTestDlg::CCtrlTestDlg(CWnd* pParent /*=nullptr*/)
 
 	pThumnailDlg = new CDlgThumbnailList(this, 100, 100, false, 2, 3, { 0, 0 });
 	pThumnailDlg->Create(CDlgThumbnailList::IDD);
+
+	pTomographyViewer = new CDlgTomographyViewer(this, { 100, 80 }, 3, 2);
+	pTomographyViewer->Create(CDlgTomographyViewer::IDD);
+}
+
+CCtrlTestDlg::~CCtrlTestDlg()
+{
+	delete pThumnailDlg;
+	delete pTomographyViewer;
 }
 
 void CCtrlTestDlg::DoDataExchange(CDataExchange* pDX)
@@ -70,6 +80,8 @@ BEGIN_MESSAGE_MAP(CCtrlTestDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOK, &CCtrlTestDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDC_BUTTON1, &CCtrlTestDlg::OnBnClickedButton1)
+	ON_BN_CLICKED(IDC_BUTTON2, &CCtrlTestDlg::OnBnClickedButton2)
 END_MESSAGE_MAP()
 
 
@@ -103,8 +115,6 @@ BOOL CCtrlTestDlg::OnInitDialog()
 	//  프레임워크가 이 작업을 자동으로 수행합니다.
 	SetIcon(m_hIcon, TRUE);			// 큰 아이콘을 설정합니다.
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
-
-	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -158,6 +168,19 @@ HCURSOR CCtrlTestDlg::OnQueryDragIcon()
 
 void CCtrlTestDlg::OnBnClickedOk()
 {
-	pThumnailDlg->loadImages(_T("D:\\Projects\\Smart M 2.0\\work\\ScoutImageSample"));
+	CDialogEx::OnOK();
+}
+
+
+void CCtrlTestDlg::OnBnClickedButton1()
+{
+	pThumnailDlg->loadImages(_T("G:\\Projects\\CtrlTest\\imageSamples"));
 	pThumnailDlg->ShowWindow(SW_SHOW);
+}
+
+
+void CCtrlTestDlg::OnBnClickedButton2()
+{
+	pTomographyViewer->loadImages(_T("G:\\Projects\\CtrlTest\\imageSamples"));
+	pTomographyViewer->ShowWindow(SW_SHOW);
 }

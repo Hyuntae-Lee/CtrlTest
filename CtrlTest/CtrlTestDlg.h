@@ -7,11 +7,13 @@
 
 // CCtrlTestDlg 대화 상자
 class CDlgThumbnailList;
+class CDlgTomographyViewer;
 class CCtrlTestDlg : public CDialogEx
 {
 // 생성입니다.
 public:
 	CCtrlTestDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+	virtual ~CCtrlTestDlg();
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -35,6 +37,10 @@ protected:
 
 protected:
 	CDlgThumbnailList* pThumnailDlg;
+	CDlgTomographyViewer* pTomographyViewer;
+
 public:
 	afx_msg void OnBnClickedOk();
+	afx_msg void OnBnClickedButton1();
+	afx_msg void OnBnClickedButton2();
 };
