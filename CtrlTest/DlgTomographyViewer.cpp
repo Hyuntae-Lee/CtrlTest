@@ -154,9 +154,6 @@ void CDlgTomographyViewer::drawBScanImage(int thumSizeX, int thumSizeY, int inde
 		// set the image file name as item text
 		m_listCtrlBScans.InsertItem(index, szName, index);
 
-		// set position
-		m_listCtrlBScans.SetItemPosition(index, pos);
-
 		delete pImage;
 		delete pThumbnail;
 	}
@@ -189,13 +186,6 @@ bool CDlgTomographyViewer::readFile(wstring& out_value, wstring strPath)
 
 void CDlgTomographyViewer::drawCScanImage(CStatic& view, CString szImagePath)
 {
-	//CImage img;
-	//img.Load(szImagePath);
-	//CBitmap bitmap;
-	//bitmap.Attach(img.Detach());
-	//view.SetBitmap(bitmap);
-
-
 	ULONG_PTR gdiplusToken = NULL;
 
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;

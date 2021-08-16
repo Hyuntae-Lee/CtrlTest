@@ -16,6 +16,9 @@
     <Filter Include="ThumnailDialog">
       <UniqueIdentifier>{c94620d2-8d29-4461-b71c-cbddaa723ed5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="TomoItemListViewer">
+      <UniqueIdentifier>{9dfa91dc-07da-433a-8d64-26dc6096097b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CtrlTest.h">
@@ -40,7 +43,13 @@
       <Filter>ThumnailDialog</Filter>
     </ClInclude>
     <ClInclude Include="DlgTomographyViewer.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>TomoItemListViewer</Filter>
+    </ClInclude>
+    <ClInclude Include="TomographyItemListViewer.h">
+      <Filter>TomoItemListViewer</Filter>
+    </ClInclude>
+    <ClInclude Include="TomographyItem.h">
+      <Filter>TomoItemListViewer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -57,7 +66,13 @@
       <Filter>ThumnailDialog</Filter>
     </ClCompile>
     <ClCompile Include="DlgTomographyViewer.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>TomoItemListViewer</Filter>
+    </ClCompile>
+    <ClCompile Include="TomographyItemListViewer.cpp">
+      <Filter>TomoItemListViewer</Filter>
+    </ClCompile>
+    <ClCompile Include="TomographyItem.cpp">
+      <Filter>TomoItemListViewer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

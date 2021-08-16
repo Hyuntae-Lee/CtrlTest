@@ -9,6 +9,7 @@
 #include "afxdialogex.h"
 #include "DlgThumbnailList.h"
 #include "DlgTomographyViewer.h"
+#include "TomographyItemListViewer.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -62,6 +63,9 @@ CCtrlTestDlg::CCtrlTestDlg(CWnd* pParent /*=nullptr*/)
 
 	pTomographyViewer = new CDlgTomographyViewer(this, { 200, 180 }, { 150, 120 }, 3, 4);
 	pTomographyViewer->Create(CDlgTomographyViewer::IDD);
+	
+	pTomographyItemListViewer = new CTomographyItemListViewer(this, { 3, 4 }, { 150, 120 });
+	pTomographyItemListViewer->Create(CTomographyItemListViewer::IDD);
 }
 
 CCtrlTestDlg::~CCtrlTestDlg()
@@ -181,6 +185,9 @@ void CCtrlTestDlg::OnBnClickedButton1()
 
 void CCtrlTestDlg::OnBnClickedButton2()
 {
-	pTomographyViewer->loadImages(_T("G:\\Projects\\CtrlTest\\imageSamples"), _T("scanInfo.json"));
-	pTomographyViewer->ShowWindow(SW_SHOW);
+	//pTomographyViewer->loadImages(_T("G:\\Projects\\CtrlTest\\imageSamples"), _T("scanInfo.json"));
+	//pTomographyViewer->ShowWindow(SW_SHOW);
+
+	pTomographyItemListViewer->loadImages(_T("G:\\Projects\\CtrlTest\\imageSamples"), _T("scanInfo.json"));
+	pTomographyItemListViewer->ShowWindow(SW_SHOW);
 }

@@ -8,6 +8,7 @@
 // CCtrlTestDlg 대화 상자
 class CDlgThumbnailList;
 class CDlgTomographyViewer;
+class CTomographyItemListViewer;
 class CCtrlTestDlg : public CDialogEx
 {
 // 생성입니다.
@@ -38,6 +39,7 @@ protected:
 protected:
 	CDlgThumbnailList* pThumnailDlg;
 	CDlgTomographyViewer* pTomographyViewer;
+	CTomographyItemListViewer* pTomographyItemListViewer;
 
 public:
 	afx_msg void OnBnClickedOk();
