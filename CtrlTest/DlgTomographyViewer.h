@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include "cpprest/json.h"
 
 using namespace std;
 
@@ -10,16 +9,24 @@ class CDlgTomographyViewer : public CDialogEx
 {
 	DECLARE_DYNAMIC(CDlgTomographyViewer)
 
-	const int kScrollMargin = 59;
-	const int kScrollMarginForNoName = 64;
+	const wstring kStrKeyCScan0 = L"cscan_0";
+	const wstring kStrKeyCScan1 = L"cscan_1";
+	const wstring kStrKeyBScanCnt = L"bscan_cnt";
+	const wstring kStrKeyBScanFilePrefix = L"bscan_file_prefix";
+	const wstring kStrKeyBScanFileExt = L"bscna_file_ext";
 
-	const int kImageSizeX;
-	const int kImageSizeY;
-	const int kCols;
-	const int kRows;
+	const int kScrollMargin = 64;
+
+	const int kCScanImageSizeX;
+	const int kCScanImageSizeY;
+	const int kBScanImageSizeX;
+	const int kBScanImageSizeY;
+	const int kBScanCols;
+	const int kBScanRows;
 
 public:
-	CDlgTomographyViewer(CWnd* pParent, SIZE thumbImageSize, int rows, int cols);
+	CDlgTomographyViewer(CWnd* pParent, SIZE cscanImageSize, SIZE bscanImageSize, int bscanRows,
+		int bscanCols);
 	virtual ~CDlgTomographyViewer();
 
 	bool loadImages(CString szDirPath, CString szInfoFileName);
@@ -30,11 +37,12 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);
 
 protected:
-	void drawThumbnailList(CString szDirPath, vector<CString> imageNameList);
-	void drawThumbnail(int thumSizeX, int thumSizeY, int index, CString szImagePath, CString szName,
+	void drawBScanImageList(POINT pos, CString szDirPath, vector<CString> imageNameList);
+	void drawBScanImage(int thumSizeX, int thumSizeY, int index, CString szImagePath, CString szName,
 		POINT pos);
-	bool getImageFileNames(vector<CString>& out_list, CString szDirPath);
-	bool loadJsonFile(web::json::value& out_value, wstring strPath);
+	void drawCScanImage(CStatic& view, CString szImagePath);
+	bool getImageFileNames(vector<CString>& out_list, CString szDirPath, vector<CString> excludes);
+	bool readFile(wstring& out_value, wstring strPath);
 
 	DECLARE_MESSAGE_MAP()
 
@@ -44,7 +52,8 @@ protected:
 	CStatic m_imageCScan0;
 	CStatic m_imageCScan1;
 
-	vector<CString> imageNameListBScans;
+	vector<CString> m_imageNameListBScans;
+	vector<CString> m_imageNameListCScans;
 
 protected:
 	virtual BOOL OnInitDialog();

@@ -6,17 +6,24 @@
 #include "DlgTomographyViewer.h"
 #include "afxdialogex.h"
 #include <fstream>
+#include "cpprest/json.h"
+	// 이 헤더를 include 하는 것만으로도 Visual Studio 실행결과에는 Memory Leak 이 발생하는 것으로 표시됨.
+	// 실제로 메모리가 새는 것은 아니고, dll load 순서 때문에 그렇게 표시되는 것이라 함.
+	// 출처 : http://codename26.rssing.com/chan-8623770/all_p204.html
 
 // CDlgTomographyViewer 대화 상자
 
 IMPLEMENT_DYNAMIC(CDlgTomographyViewer, CDialogEx)
 
-CDlgTomographyViewer::CDlgTomographyViewer(CWnd* pParent, SIZE thumbImageSize, int rows, int cols)
+CDlgTomographyViewer::CDlgTomographyViewer(CWnd* pParent, SIZE cscanImageSize, SIZE bscanImageSize,
+	int bscanRows, int bscanCols)
 	: CDialogEx(IDD_DLG_TOMOGRAPHYVIEWER, pParent)
-	, kImageSizeX(thumbImageSize.cx)
-	, kImageSizeY(thumbImageSize.cy)
-	, kRows(rows)
-	, kCols(cols)
+	, kCScanImageSizeX(cscanImageSize.cx)
+	, kCScanImageSizeY(cscanImageSize.cy)
+	, kBScanImageSizeX(bscanImageSize.cx)
+	, kBScanImageSizeY(bscanImageSize.cy)
+	, kBScanRows(bscanRows)
+	, kBScanCols(bscanCols)
 {
 
 }
@@ -31,24 +38,41 @@ bool CDlgTomographyViewer::loadImages(CString szDirPath, CString szInfoFileName)
 
 	// load json file
 	web::json::value jsonValue;
+	{
+		wstring strFileName = CT2CW(szInfoFileName);
+		auto strFilePath = strDirPath + L"/" + strFileName;
 
-	wstring strFileName = CT2CW(szInfoFileName);
-	auto strFilePath = strDirPath + L"/" + strFileName;
+		wstring strContents;
 
-	if (!loadJsonFile(jsonValue, strFilePath)) {
-		return false;
+		if (!readFile(strContents, strFilePath)) {
+			return false;
+		}
+
+		jsonValue = web::json::value::parse(strContents);
 	}
-	
 
-	// TODO
+	// get data info.
+	auto strFileNameCScan0 = jsonValue[kStrKeyCScan0].as_string();
+	auto strFileNameCScan1 = jsonValue[kStrKeyCScan1].as_string();
+	auto strNBScans = jsonValue[kStrKeyBScanCnt].as_integer();
+	auto strFileNamePrefixBScan = jsonValue[kStrKeyBScanFilePrefix].as_string();
+	auto strFileExtBScan = jsonValue[kStrKeyBScanFileExt].as_string();
 
 	// get image list
-	imageNameListBScans.clear();
-	if (!getImageFileNames(imageNameListBScans, szDirPath)) {
+	m_imageNameListCScans.clear();
+	m_imageNameListCScans = {
+		CString(strFileNameCScan0.c_str()),
+		CString(strFileNameCScan1.c_str()),
+	};
+	m_imageNameListBScans.clear();
+	if (!getImageFileNames(m_imageNameListBScans, szDirPath, m_imageNameListCScans)) {
 		return false;
 	}
 
-	drawThumbnailList(szDirPath, imageNameListBScans);
+	drawBScanImageList({ kCScanImageSizeX, kCScanImageSizeY }, szDirPath, m_imageNameListBScans);
+
+	drawCScanImage(m_imageCScan0, szDirPath + _T("\\") + m_imageNameListCScans[0]);
+	drawCScanImage(m_imageCScan1, szDirPath + _T("\\") + m_imageNameListCScans[1]);
 
 	return true;
 }
@@ -58,9 +82,11 @@ void CDlgTomographyViewer::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 
 	DDX_Control(pDX, IDC_LIST_BSCANS, m_listCtrlBScans);
+	DDX_Control(pDX, IDC_STATIC_CSCAN_0, m_imageCScan0);
+	DDX_Control(pDX, IDC_STATIC_CSCAN_1, m_imageCScan1);
 }
 
-void CDlgTomographyViewer::drawThumbnailList(CString szDirPath, vector<CString> imageNameList)
+void CDlgTomographyViewer::drawBScanImageList(POINT pos, CString szDirPath, vector<CString> imageNameList)
 {
 	// hold the window update to avoid flicking
 	m_listCtrlBScans.SetRedraw(FALSE);
@@ -89,20 +115,19 @@ void CDlgTomographyViewer::drawThumbnailList(CString szDirPath, vector<CString> 
 		// position, name
 		POINT pos;
 		CString szName;
-		pos.x = kImageSizeX * (i % kCols);
-
-		pos.y = kImageSizeY * (int)(i / kCols);
+		pos.x = kBScanImageSizeX * (i % kBScanCols);
+		pos.y = kBScanImageSizeY * (int)(i / kBScanCols);
 
 		szName = _T("");
 
-		drawThumbnail(kImageSizeX, kImageSizeY, i, szPath, szName, pos);
+		drawBScanImage(kBScanImageSizeX, kBScanImageSizeY, i, szPath, szName, pos);
 	}
 
 	// let's show the new thumbnails
 	m_listCtrlBScans.SetRedraw();
 }
 
-void CDlgTomographyViewer::drawThumbnail(int thumSizeX, int thumSizeY, int index,
+void CDlgTomographyViewer::drawBScanImage(int thumSizeX, int thumSizeY, int index,
 	CString szImagePath, CString szName, POINT pos)
 {
 	ULONG_PTR gdiplusToken = NULL;
@@ -114,7 +139,7 @@ void CDlgTomographyViewer::drawThumbnail(int thumSizeX, int thumSizeY, int index
 		// load the bitmap
 		USES_CONVERSION;
 		Gdiplus::Bitmap img(szImagePath);
-		Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(kImageSizeX, kImageSizeY, NULL, NULL));
+		Gdiplus::Bitmap* pThumbnail = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(kBScanImageSizeX, kBScanImageSizeY, NULL, NULL));
 
 		// attach the thumbnail bitmap handle to an CBitmap object
 		HBITMAP hBmp;
@@ -139,7 +164,67 @@ void CDlgTomographyViewer::drawThumbnail(int thumSizeX, int thumSizeY, int index
 	Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
-bool CDlgTomographyViewer::getImageFileNames(vector<CString>& out_list, CString szDirPath)
+bool CDlgTomographyViewer::readFile(wstring& out_value, wstring strPath)
+{
+	wifstream file(strPath);
+	if (!file.is_open()) {
+		return false;
+	}
+
+	wstringbuf strContentsBuf;
+	wostream os(&strContentsBuf);
+
+	while (file) {
+		wstring strLine;
+		getline(file, strLine);
+
+		os << strLine;
+	}
+	file.close();
+
+	out_value = strContentsBuf.str();
+
+	return true;
+}
+
+void CDlgTomographyViewer::drawCScanImage(CStatic& view, CString szImagePath)
+{
+	//CImage img;
+	//img.Load(szImagePath);
+	//CBitmap bitmap;
+	//bitmap.Attach(img.Detach());
+	//view.SetBitmap(bitmap);
+
+
+	ULONG_PTR gdiplusToken = NULL;
+
+	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+
+	{
+		// load the bitmap
+		USES_CONVERSION;
+		Gdiplus::Bitmap img(szImagePath);
+		Gdiplus::Bitmap* pImageScaled = static_cast<Gdiplus::Bitmap*>(img.GetThumbnailImage(kCScanImageSizeX, kCScanImageSizeY, NULL, NULL));
+
+		// attach the thumbnail bitmap handle to an CBitmap object
+		HBITMAP hBmp;
+		pImageScaled->GetHBITMAP(NULL, &hBmp);
+		
+		auto pImage = new CBitmap();
+		pImage->Attach(hBmp);
+
+		view.SetBitmap((HBITMAP)*pImage);
+
+		delete pImage;
+		delete pImageScaled;
+	}
+
+	Gdiplus::GdiplusShutdown(gdiplusToken);
+}
+
+bool CDlgTomographyViewer::getImageFileNames(vector<CString>& out_list, CString szDirPath,
+	vector<CString> excludes)
 {
 	CString	strExt;
 	CString	strName;
@@ -167,16 +252,22 @@ bool CDlgTomographyViewer::getImageFileNames(vector<CString>& out_list, CString 
 	{
 		// test file extension
 		strName = FindFileData.cFileName;
-		strExt = strName.Right(3);
 
-		if ((strExt.CompareNoCase(TEXT("bmp")) == 0) ||
-			(strExt.CompareNoCase(TEXT("jpg")) == 0) ||
-			(strExt.CompareNoCase(TEXT("gif")) == 0) ||
-			(strExt.CompareNoCase(TEXT("tif")) == 0) ||
-			(strExt.CompareNoCase(TEXT("png")) == 0))
-		{
-			// save the image file name
-			out_list.push_back(strName);
+		//
+		auto itr = find_if(excludes.begin(), excludes.end(),
+			[strName](auto x) { return x == strName; });
+		if (itr == excludes.end()) {
+			strExt = strName.Right(3);
+
+			if ((strExt.CompareNoCase(TEXT("bmp")) == 0) ||
+				(strExt.CompareNoCase(TEXT("jpg")) == 0) ||
+				(strExt.CompareNoCase(TEXT("gif")) == 0) ||
+				(strExt.CompareNoCase(TEXT("tif")) == 0) ||
+				(strExt.CompareNoCase(TEXT("png")) == 0))
+			{
+				// save the image file name
+				out_list.push_back(strName);
+			}
 		}
 	}
 
@@ -194,16 +285,21 @@ bool CDlgTomographyViewer::getImageFileNames(vector<CString>& out_list, CString 
 			{
 				// test file extension
 				strName = FindFileData.cFileName;
-				strExt = strName.Right(3);
+				//
+				auto itr = find_if(excludes.begin(), excludes.end(),
+					[strName](auto x) { return x == strName; });
+				if (itr == excludes.end()) {
+					strExt = strName.Right(3);
 
-				if ((strExt.CompareNoCase(TEXT("bmp")) == 0) ||
-					(strExt.CompareNoCase(TEXT("jpg")) == 0) ||
-					(strExt.CompareNoCase(TEXT("gif")) == 0) ||
-					(strExt.CompareNoCase(TEXT("tif")) == 0) ||
-					(strExt.CompareNoCase(TEXT("png")) == 0))
-				{
-					// save the image file name
-					out_list.push_back(strName);
+					if ((strExt.CompareNoCase(TEXT("bmp")) == 0) ||
+						(strExt.CompareNoCase(TEXT("jpg")) == 0) ||
+						(strExt.CompareNoCase(TEXT("gif")) == 0) ||
+						(strExt.CompareNoCase(TEXT("tif")) == 0) ||
+						(strExt.CompareNoCase(TEXT("png")) == 0))
+					{
+						// save the image file name
+						out_list.push_back(strName);
+					}
 				}
 			}
 		}
@@ -226,56 +322,43 @@ bool CDlgTomographyViewer::getImageFileNames(vector<CString>& out_list, CString 
 BEGIN_MESSAGE_MAP(CDlgTomographyViewer, CDialogEx)
 END_MESSAGE_MAP()
 
-bool CDlgTomographyViewer::loadJsonFile(web::json::value& out_value, wstring strPath)
-{
-	// read file
-	wifstream file(strPath);
-	if (!file.is_open()) {
-		return false;
-	}
-
-	wstringbuf strContentsBuf;
-	wostream os(&strContentsBuf);
-
-	while (file) {
-		wstring strLine;
-		getline(file, strLine);
-
-		os << strLine;
-	}
-	file.close();
-
-	// load json conents
-	out_value = web::json::value::parse(strContentsBuf.str());
-
-	return true;
-}
-
 // CDlgTomographyViewer 메시지 처리기
 BOOL CDlgTomographyViewer::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_imageListBScans.Create(kImageSizeX, kImageSizeY, ILC_COLOR24, 0, 1);
+	m_imageListBScans.Create(kBScanImageSizeX, kBScanImageSizeY, ILC_COLOR24, 0, 1);
 	m_listCtrlBScans.SetImageList(&m_imageListBScans, LVSIL_NORMAL);
 
 	m_listCtrlBScans.ShowScrollBar(0, FALSE);
 	m_listCtrlBScans.ShowScrollBar(1, FALSE);
 
-	// set window size
+	// CScan
+	{
+		int offsetX = 0;
+		int offsetY = 0;
+
+		m_imageCScan0.MoveWindow(offsetX, offsetY, kCScanImageSizeX, kCScanImageSizeY);
+		m_imageCScan1.MoveWindow(offsetX, offsetY + kCScanImageSizeY, kCScanImageSizeX, kCScanImageSizeY);
+	}
+
+	// BScan
 	{
 		// width
-		int wndW = kImageSizeX * kCols + kScrollMarginForNoName;
+		int wndW = kBScanImageSizeX * kBScanCols + kScrollMargin;
 
 		// height
-		int wndH = static_cast<int>(kImageSizeY * kRows);
+		int wndH = static_cast<int>(kBScanImageSizeY * kBScanRows);
 
-		// 
-		CRect rtClient;
-		m_listCtrlBScans.GetClientRect(&rtClient);
-		rtClient.SetRect(rtClient.left, rtClient.top, rtClient.left + wndW, rtClient.top + wndH);
+		CRect rtCScan0;
+		m_imageCScan0.GetClientRect(&rtCScan0);
 
-		m_listCtrlBScans.MoveWindow(&rtClient);
+		auto left = rtCScan0.right;
+		auto top = rtCScan0.top;
+		auto right = left + wndW;
+		auto bottom = top + wndH;
+
+		m_listCtrlBScans.MoveWindow(CRect(left, top, right, bottom));
 	}
 
 	return TRUE;

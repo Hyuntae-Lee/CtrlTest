@@ -60,7 +60,7 @@ CCtrlTestDlg::CCtrlTestDlg(CWnd* pParent /*=nullptr*/)
 	pThumnailDlg = new CDlgThumbnailList(this, 100, 100, false, 2, 3, { 0, 0 });
 	pThumnailDlg->Create(CDlgThumbnailList::IDD);
 
-	pTomographyViewer = new CDlgTomographyViewer(this, { 100, 80 }, 3, 2);
+	pTomographyViewer = new CDlgTomographyViewer(this, { 200, 180 }, { 150, 120 }, 3, 4);
 	pTomographyViewer->Create(CDlgTomographyViewer::IDD);
 }
 
