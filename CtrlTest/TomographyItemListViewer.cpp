@@ -95,11 +95,11 @@ bool CTomographyItemListViewer::loadImages(wstring strDirPath, wstring strInfoFi
 
 void CTomographyItemListViewer::addItem(wstring strFileName, wstring strName)
 {
-	auto index = (int)m_itemList.size();
+	auto index = (int)m_bscanItemList.size();
 
 	CTomographyItem newItem(m_strDirPath, strFileName, index, strName);
 
-	m_itemList.push_back(newItem);
+	m_bscanItemList.push_back(newItem);
 }
 
 bool CTomographyItemListViewer::readFile(wstring& out_value, wstring strPath)
@@ -223,24 +223,54 @@ bool CTomographyItemListViewer::getImageFileNames(vector<CString>& out_list, CSt
 
 void CTomographyItemListViewer::updateScrollInfo()
 {
-	int size = int(m_itemList.size());
-	int rows = int(ceil(size / 3.0));
-
-	int nMax = kNBScanRows - 1;
-	int nMin = 0;
-	int nPage = kNBScanCols;
-	int nPos = 0;
+	auto nOveredRows = (int)m_bscanItemList.size() / kNBScanCols - kNBScanRows + 1;
 
 	SCROLLINFO scrInfo;
 	scrInfo.cbSize = sizeof(scrInfo);
 	scrInfo.fMask = SIF_ALL;
 	scrInfo.nMin = 0;
-	scrInfo.nMax = 100;
-	scrInfo.nPage = 50;
+	scrInfo.nMax = (nOveredRows + 1) * kBScanItemH;
+	scrInfo.nPage = kBScanItemH;
 	scrInfo.nTrackPos = 0;
 	scrInfo.nPos = 0;
 
 	m_scrollbar.SetScrollInfo( &scrInfo ); // 스크롤바 정보 설정
+}
+
+void CTomographyItemListViewer::drawItem(CPaintDC& dc, CTomographyItem& item, CRect rect)
+{
+	ULONG_PTR gdiplusToken = NULL;
+
+	CString szImagePath(item.getImagePath().c_str());
+	CString szName(item.getName().c_str());
+
+	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+
+	{
+		Gdiplus::Graphics G(dc.GetSafeHdc());
+		Gdiplus::Rect rtItem(rect.left, rect.top, rect.Width(), rect.Height());
+
+		// image
+		USES_CONVERSION;
+		Gdiplus::Image img(szImagePath);
+		Gdiplus::Image* pImageScaled = static_cast<Gdiplus::Image*>(img.GetThumbnailImage(rect.Width(), rect.Height(), NULL, NULL));
+
+		G.DrawImage(pImageScaled, rtItem);
+
+		// name
+		Gdiplus::SolidBrush brush(Gdiplus::Color::Red);
+		Gdiplus::PointF origin(rtItem.X, rtItem.Y);
+
+		Gdiplus::FontFamily fontFamily(L"Times New Roman");
+		Gdiplus::Font font(&fontFamily, 24, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+
+		G.DrawString(szName, szName.GetLength(), &font, origin, &brush);
+
+		delete pImageScaled;
+	}
+
+	Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
 void CTomographyItemListViewer::DoDataExchange(CDataExchange* pDX)
@@ -264,20 +294,55 @@ void CTomographyItemListViewer::OnPaint()
 {
 	CPaintDC dc(this);
 
+	auto scrollPos = m_scrollbar.GetScrollPos();
 
+	int minCurPos, maxCurPos;
+	m_scrollbar.GetScrollRange(&minCurPos, &maxCurPos);
+
+	int step = scrollPos / kBScanItemH;
+	int startIdx = kNBScanCols * step;
+
+	for (int rectIdx = 0, itemIdx = startIdx; rectIdx < m_bscanItemRectList.size(); rectIdx++) {
+		auto rect = m_bscanItemRectList[rectIdx];
+		auto item = m_bscanItemList[itemIdx];
+
+		drawItem(dc, item, rect);
+	}
 }
 
 
 void CTomographyItemListViewer::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
+	int offset = 0;
+
 	switch (nSBCode) {
 	case SB_LINEUP:
-		pScrollBar->SetScrollPos(pScrollBar->GetScrollPos() - 1);
+		offset = -kBScanItemH;
 		break;
 	case SB_LINEDOWN:
-		pScrollBar->SetScrollPos(pScrollBar->GetScrollPos() + 1);
+		offset = kBScanItemH;
 		break;
 	}
 
+	pScrollBar->SetScrollPos(pScrollBar->GetScrollPos() + offset);
+
+	Invalidate();
+
 	CDialogEx::OnVScroll(nSBCode, nPos, pScrollBar);
+}
+
+
+BOOL CTomographyItemListViewer::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+
+	int l = m_bscanItemRectList[kNBScanCols - 1].right;
+	int t = m_bscanItemRectList[0].top;
+	int w = 30;
+	int h = kNBScanRows * kBScanItemH;
+
+	m_scrollbar.MoveWindow(l, t, w, h);
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
 }

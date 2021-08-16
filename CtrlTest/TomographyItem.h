@@ -12,6 +12,7 @@ public:
 
 	auto getName()->wstring;
 	auto getIndex()->int;
+	auto getImagePath()->wstring;
 
 protected:
 	wstring m_strDirPath;

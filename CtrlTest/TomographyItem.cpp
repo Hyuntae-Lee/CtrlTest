@@ -23,3 +23,8 @@ auto CTomographyItem::getIndex()->int
 {
 	return m_index;
 }
+
+auto CTomographyItem::getImagePath()->wstring
+{
+	return m_strDirPath + L"\\" + m_strFileName;
+}

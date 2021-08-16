@@ -58,7 +58,7 @@ CCtrlTestDlg::CCtrlTestDlg(CWnd* pParent /*=nullptr*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	pThumnailDlg = new CDlgThumbnailList(this, 100, 100, false, 2, 3, { 0, 0 });
+	pThumnailDlg = new CDlgThumbnailList(this, 100, 100, false, 3, 4, { 0, 0 });
 	pThumnailDlg->Create(CDlgThumbnailList::IDD);
 
 	pTomographyViewer = new CDlgTomographyViewer(this, { 200, 180 }, { 150, 120 }, 3, 4);

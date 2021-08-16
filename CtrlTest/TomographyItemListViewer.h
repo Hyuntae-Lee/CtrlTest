@@ -33,9 +33,10 @@ protected:
 	bool readFile(wstring& out_value, wstring strPath);
 	bool getImageFileNames(vector<CString>& out_list, CString szDirPath, vector<CString> excludes);
 	void updateScrollInfo();
+	void drawItem(CPaintDC& dc, CTomographyItem& item, CRect rect);
 
 protected:
-	vector<CTomographyItem> m_itemList;
+	vector<CTomographyItem> m_bscanItemList;
 	CScrollBar m_scrollbar;
 	vector<CRect> m_bscanItemRectList;
 	vector<CString> m_imageNameListCScans;
@@ -45,7 +46,9 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
 
 	DECLARE_MESSAGE_MAP()
+
 public:
 	afx_msg void OnPaint();
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	virtual BOOL OnInitDialog();
 };
